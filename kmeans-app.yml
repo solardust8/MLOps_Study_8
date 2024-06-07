@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kmeans-deployment
+  labels:
+    app: kmeans
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kmeans
+  template:
+    metadata:
+      labels:
+        app: kmeans
+    spec:
+      containers:
+      - name: kmeans
+        image: solardust8/mlops7_app:latest
+        ports:
+        - containerPort: 18080
+        - containerPort: 4040
+        - containerPort: 4041
+        - containerPort: 7890
+        env:
+          - name: USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: USER
+          - name: PASSW
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: PASSW
+          - name: DB_URL
+            valueFrom:
+              configMapKeyRef:
+                name: postgres-config
+                key: postgres-url
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kmeans-service
+spec:
+  type: NodePort
+  selector:
+    app: kmeans
+  ports:
+    - protocol: TCP
+      name: running-app
+      port: 18080
+      targetPort: 18080
+      nodePort: 30080
+    - protocol: TCP
+      name: history-server
+      port: 4040
+      targetPort: 4040
+      nodePort: 31040
+    - protocol: TCP
+      name: history-server-reserved
+      port: 4041
+      targetPort: 4041
+      nodePort: 31041
+    - protocol: TCP
+      name: fastapi
+      port: 7890
+      targetPort: 7890
+      nodePort: 30090
